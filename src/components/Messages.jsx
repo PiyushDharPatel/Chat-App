@@ -9,16 +9,28 @@ const Messages = () => {
   const { data } = useContext(ChatContext);
 
   useEffect(() => {
-    const unSub = onSnapshot(doc(db, "chats", data.chatId), (doc) => {
-      doc.exists() && setMessages(doc.data().messages);
+    if (!data.chatId) return; 
+
+    const unsubscribe = onSnapshot(doc(db, "chats", data.chatId), (doc) => {
+      if (doc.exists()) {
+        const chatData = doc.data();
+        
+        if (chatData.messages && Array.isArray(chatData.messages)) {
+          setMessages(chatData.messages);
+        } else {
+          console.error("Invalid chat data structure:", chatData);
+          setMessages([]);
+        }
+      } else {
+        console.error("Chat document not found:", data.chatId);
+        setMessages([]);
+      }
     });
 
-    return () => {
-      unSub();
-    };
+    return () => unsubscribe();
   }, [data.chatId]);
 
-  console.log(messages)
+  console.log(messages);
 
   return (
     <div className="messages">
